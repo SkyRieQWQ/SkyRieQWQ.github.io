@@ -249,7 +249,7 @@
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">切换分类不丢羁绊；每轮选1个Buff叠加；选完点亮下一轮</div>
+    <div class="tip">同一轮只能选1个，重选会替换；下一轮才会叠加到列表</div>
 
     <div class="stacked-buffs">
         <div class="stacked-buffs-title">✅ 已叠加Buff（永久保留）</div>
@@ -271,7 +271,7 @@ let currentPool = [];
 let selectedBuffs = [];
 let unselectedPool = [];
 let replaceCount = {};
-let chosenIndex = -1;
+let chosenIndex = -1; // 本轮已选的那个
 
 const categoryBtns = document.querySelectorAll('.category-btn');
 const startBtn = document.getElementById('startBtn');
@@ -437,12 +437,14 @@ function renderSelected() {
         };
 
         chooseBtn.onclick = () => {
+            // 同一轮：只能有一个选中，直接替换
             chosenIndex = index;
             const targetBuff = selectedBuffs[index];
 
-            if (!stackedBuffs.includes(targetBuff)) {
-                stackedBuffs.push(targetBuff);
-            }
+            // 先把本轮已选的删掉（如果有）
+            // 然后加入当前这个
+            stackedBuffs = stackedBuffs.filter(b => !selectedBuffs.includes(b));
+            stackedBuffs.push(targetBuff);
 
             const symbols = ['~','@','#','%','&','*'];
             globalBondSymbol = symbols.find(s=>targetBuff.includes(s)) || null;
