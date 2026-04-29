@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Buff抽选系统</title>
     <style>
         * {
@@ -12,11 +12,17 @@
             font-family: "Microsoft YaHei", sans-serif;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
-            /* 这里只需要文件名，只要和html同目录就能显示 */
-            background: url("galatea.jpg") no-repeat center center;
+            background: url("https://picsum.photos/1920/1080?random=10") no-repeat center center fixed;
             background-size: cover;
-            background-attachment: fixed;
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
@@ -52,12 +58,13 @@
         .category-box {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
             margin-bottom: 25px;
         }
 
         .category-btn {
-            padding: 12px 30px;
+            padding: 12px 20px;
             font-size: 16px;
             border: none;
             border-radius: 8px;
@@ -77,14 +84,14 @@
         }
 
         .main-btn {
-            padding: 15px 40px;
-            font-size: 18px;
+            padding: 15px 25px;
+            font-size: 16px;
             border: none;
             border-radius: 8px;
-            background: rgba103, 194, 58, 0.9);
+            background: rgba(103, 194, 58, 0.9);
             color: white;
             cursor: pointer;
-            margin: 0 10px;
+            margin: 5px;
             transition: all 0.3s;
         }
 
@@ -216,7 +223,7 @@
     </style>
 </head>
 <body>
-    <h1 class="title">Buff抽选系统（叠加完整版）</h1>
+    <h1 class="title">Buff抽选系统</h1>
     <div class="bond-global-tip" id="globalBondTip">当前无锁定羁绊</div>
 
     <div class="category-box">
