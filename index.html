@@ -46,6 +46,7 @@
         .choose-btn.active { background: #2196f3; }
         .tip { color: white; margin-top:10px; text-align:center; }
         .stacked-buffs{ position: fixed; left:0; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:15px; color:white; z-index:99; }
+        .stacked-buff-tag { display: inline-block; background: #409eff; color: white; padding: 4px 8px; border-radius: 4px; margin: 0 5px; cursor: pointer; }
         .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:1000; }
         .modal-content { background:white; padding:25px; border-radius:12px; width:90%; max-width:500px; }
         .modal-close-btn { padding:10px 25px; background:#409eff; color:white; border:none; border-radius:6px; cursor:pointer; margin-top:15px; }
@@ -74,7 +75,7 @@
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">点击Buff名称可查看详情；每轮仅可替换1次；同一轮只能选1个</div>
+    <div class="tip">点击Buff名称或底部标签可查看详情；每个Buff可替换1次；同一轮只能选1个</div>
 
     <div class="stacked-buffs">
         <div class="stacked-buffs-title">✅ 已叠加Buff（永久保留）</div>
@@ -100,7 +101,8 @@ let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
 let currentCategory = "棱彩阶";
 let selectedBuffs = [];
 let unselectedPool = [];
-let replaceCount = 0; // 全局替换次数，限制为1次
+// 每个位置的替换次数，0=未替换，1=已替换
+let replaceCount = [0, 0, 0];
 let chosenIndex = -1;
 
 // 加载config.json
@@ -119,12 +121,34 @@ async function loadConfig(){
 }
 loadConfig();
 
-// 更新底部已选列表
+// 更新底部已选列表（可点击查看详情）
 function updateStackedBuffsList(){
+    const el = document.getElementById("stackedBuffsList");
     if(stackedBuffs.length === 0){
-        document.getElementById("stackedBuffsList").innerHTML = "暂无Buff";
+        el.innerHTML = "暂无Buff";
     }else{
-        document.getElementById("stackedBuffsList").innerHTML = stackedBuffs.join(" • ");
+        el.innerHTML = stackedBuffs.map(buff => {
+            return `<span class="stacked-buff-tag" data-name="${buff}">${buff}</span>`;
+        }).join("");
+        
+        // 给每个标签添加点击事件
+        el.querySelectorAll(".stacked-buff-tag").forEach(tag => {
+            tag.onclick = () => {
+                const buffName = tag.dataset.name;
+                // 找这个Buff属于哪个分类
+                let category = null;
+                for (const c of Object.keys(buffData)) {
+                    if (buffData[c][buffName]) {
+                        category = c;
+                        break;
+                    }
+                }
+                const desc = buffData[category][buffName] || "暂无说明";
+                document.getElementById("modalTitle").textContent = buffName;
+                document.getElementById("modalBody").textContent = desc;
+                document.getElementById("modalOverlay").style.display = "flex";
+            };
+        });
     }
 }
 
@@ -159,18 +183,18 @@ function renderSelectedList(){
             document.getElementById("modalOverlay").style.display = "flex";
         };
 
-        // 替换按钮（每轮只能点1次）
+        // 替换按钮（每个位置只能替换1次）
         const replaceBtn = document.createElement("button");
         replaceBtn.className = "replace-btn";
         replaceBtn.textContent = "替换";
-        replaceBtn.disabled = replaceCount >= 1;
+        replaceBtn.disabled = replaceCount[index] >= 1;
         replaceBtn.onclick = () => {
-            if(unselectedPool.length === 0 || replaceCount >= 1) return;
+            if(unselectedPool.length === 0 || replaceCount[index] >= 1) return;
             // 替换逻辑：从剩余池里随机换一个
             const newBuff = unselectedPool[Math.floor(Math.random() * unselectedPool.length)];
             selectedBuffs[index] = newBuff;
             unselectedPool = unselectedPool.filter(b => b !== newBuff);
-            replaceCount++;
+            replaceCount[index] = 1;
             renderSelectedList();
         };
 
@@ -214,7 +238,7 @@ document.getElementById("startBtn").onclick = () => {
     const shuffledAll = [...allBuffs].sort(() => Math.random() - 0.5);
     selectedBuffs = shuffledAll.slice(0, 3);
     unselectedPool = shuffledAll.slice(3);
-    replaceCount = 0; // 重置替换次数
+    replaceCount = [0, 0, 0]; // 重置每个位置的替换次数
     chosenIndex = -1;
     renderSelectedList();
     document.getElementById("nextRoundBtn").disabled = true;
@@ -232,7 +256,7 @@ document.getElementById("resetBtn").onclick = () => {
     stackedBuffs = [];
     selectedBuffs = [];
     unselectedPool = [];
-    replaceCount = 0;
+    replaceCount = [0, 0, 0];
     chosenIndex = -1;
     updateStackedBuffsList();
     updateBondTip();
@@ -249,7 +273,7 @@ document.querySelectorAll(".category-btn").forEach(btn => {
         // 切换分类后重置当前轮
         selectedBuffs = [];
         unselectedPool = [];
-        replaceCount = 0;
+        replaceCount = [0, 0, 0];
         chosenIndex = -1;
         renderSelectedList();
         document.getElementById("nextRoundBtn").disabled = true;
