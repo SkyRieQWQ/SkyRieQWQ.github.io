@@ -18,19 +18,19 @@
             min-height: 100vh;
         }
 
-       body {
-    background-image: url("./galatea.jpg");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-    background-attachment: fixed;
-    background-color: #222;
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
-    padding-bottom: 180px;
-}
+        body {
+            background-image: url("./galatea.jpg");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+            background-color: #222;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 180px;
+        }
         body::before {
             content: '';
             position: fixed;
@@ -89,7 +89,7 @@
             font-size: 16px;
             border: none;
             border-radius: 8px;
-            background: rgba(103, 194, 58, 0.9);
+            background: rgba103, 194, 58, 0.9;
             color: white;
             cursor: pointer;
             margin: 5px;
@@ -308,7 +308,16 @@
     </div>
 
 <script>
-const buffData = {
+const bondMap = {
+    '~': '超雄',
+    '@': '发育',
+    '#': '保护伞',
+    '%': '偷啃',
+    '&': '赛场作法',
+    '*': '奶妈',
+    '！': '你掉进陷阱了'
+};
+    const buffData = {
     "棱彩阶": {
         "魏延": "每当你造成超过500点伤害时，抽一张牌（每回合最多五次）。",
         "遗老": "你的通常魔法可以在对手的回合发动（变成二速）。",
@@ -527,7 +536,7 @@ function saveToLocal() {
 
 function updateGlobalBondTip(){
     if(globalBondSymbol){
-        globalBondTip.innerText = `🔒 全局锁定羁绊符号：【${globalBondSymbol}】跨分类生效`;
+       globalBondTip.innerText = `🔒 全局锁定羁绊：【${bondMap[globalBondSymbol]}】跨分类生效`;
     }else{
         globalBondTip.innerText = "当前无锁定羁绊";
     }
@@ -622,28 +631,28 @@ function startDraw() {
         const normalBuffs = allBuffs.filter(buff => !buff.includes(globalBondSymbol));
 
         if (bondBuffs.length > 0) {
-            const bondCount = Math.min(Math.floor(Math.random() * 3)+1, bondBuffs.length, 10);
-            const shuffledBond = [...bondBuffs].sort(() => Math.random()-0.5);
+            const bondCount = Math.min(Math.floor(Math.random() * 3) + 1, bondBuffs.length, 10);
+            const shuffledBond = [...bondBuffs].sort(() => Math.random() - 0.5);
             pool.push(...shuffledBond.slice(0, bondCount));
 
-            const shuffledNormal = [...normalBuffs].sort(() => Math.random()-0.5);
+            const shuffledNormal = [...normalBuffs].sort(() => Math.random() - 0.5);
             for (const b of shuffledNormal) {
-                if (pool.length >=10) break;
+                if (pool.length >= 10) break;
                 if (!pool.includes(b)) pool.push(b);
             }
 
-            bondTip.textContent = `✅ 本轮至少包含羁绊【${globalBondSymbol}】`;
+            bondTip.textContent = `✅ 本轮至少包含羁绊【${bondMap[globalBondSymbol]}】`;
             bondTip.style.display = 'block';
         } else {
-            while (pool.length <10) {
-                const r = allBuffs[Math.floor(Math.random()*allBuffs.length)];
+            while (pool.length < 10) {
+                const r = allBuffs[Math.floor(Math.random() * allBuffs.length)];
                 if (!pool.includes(r)) pool.push(r);
             }
             bondTip.style.display = 'none';
         }
     } else {
-        while (pool.length <10) {
-            const r = allBuffs[Math.floor(Math.random()*allBuffs.length)];
+        while (pool.length < 10) {
+            const r = allBuffs[Math.floor(Math.random() * allBuffs.length)];
             if (!pool.includes(r)) pool.push(r);
         }
         bondTip.style.display = 'none';
@@ -654,15 +663,15 @@ function startDraw() {
 
     const tempPool = [...pool];
     selectedBuffs = [];
-    while (selectedBuffs.length <3) {
-        const r = tempPool[Math.floor(Math.random()*tempPool.length)];
+    while (selectedBuffs.length < 3) {
+        const r = tempPool[Math.floor(Math.random() * tempPool.length)];
         selectedBuffs.push(r);
-        tempPool.splice(tempPool.indexOf(r),1);
+        tempPool.splice(tempPool.indexOf(r), 1);
     }
     unselectedPool = tempPool;
 
     replaceCount = {};
-    selectedBuffs.forEach((_,i) => replaceCount[i]=0);
+    selectedBuffs.forEach((_, i) => replaceCount[i] = 0);
     renderSelected();
 }
 
@@ -691,8 +700,8 @@ function renderSelected() {
 
         const replaceBtn = document.createElement('button');
         replaceBtn.className = 'replace-btn';
-        replaceBtn.textContent = replaceCount[index] ===0 ? '替换' : '已替换';
-        replaceBtn.disabled = replaceCount[index]>0;
+        replaceBtn.textContent = replaceCount[index] === 0 ? '替换' : '已替换';
+        replaceBtn.disabled = replaceCount[index] > 0;
 
         const chooseBtn = document.createElement('button');
         chooseBtn.className = 'choose-btn';
@@ -706,12 +715,12 @@ function renderSelected() {
         });
 
         replaceBtn.onclick = () => {
-            if (unselectedPool.length===0) return;
-            const newBuff = unselectedPool[Math.floor(Math.random()*unselectedPool.length)];
+            if (unselectedPool.length === 0) return;
+            const newBuff = unselectedPool[Math.floor(Math.random() * unselectedPool.length)];
             unselectedPool.push(selectedBuffs[index]);
             selectedBuffs[index] = newBuff;
-            unselectedPool = unselectedPool.filter(b=>b!==newBuff);
-            replaceCount[index] =1;
+            unselectedPool = unselectedPool.filter(b => b !== newBuff);
+            replaceCount[index] = 1;
             renderSelected();
         };
 
@@ -722,8 +731,9 @@ function renderSelected() {
             stackedBuffs = stackedBuffs.filter(b => !selectedBuffs.includes(b));
             stackedBuffs.push(targetBuff);
 
-            const symbols = ['~','@','#','%','&','*'];
-            globalBondSymbol = symbols.find(s=>targetBuff.includes(s)) || null;
+            // 已加入 ！ 符号羁绊
+            const symbols = ['~','@','#','%','&','*','！'];
+            globalBondSymbol = symbols.find(s => targetBuff.includes(s)) || null;
 
             saveToLocal();
             updateGlobalBondTip();
