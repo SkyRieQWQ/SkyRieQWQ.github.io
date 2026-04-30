@@ -39,6 +39,7 @@
         .selected-box { background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; margin-top:20px; }
         .pool-title { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: bold; }
         .selected-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f0f8ff; margin-bottom: 10px; border-radius: 6px; }
+        .selected-item.chosen { background: #e6f7ff; border: 2px solid #409eff; }
         .replace-btn { padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .replace-btn:disabled { background: #aaa; cursor: not-allowed; }
         .choose-btn { padding: 6px 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -75,7 +76,7 @@
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">点击Buff名称可查看详情；每个Buff可各自替换一次；每轮只能选1个叠加到列表</div>
+    <div class="tip">点击Buff名称可查看详情；每个Buff可各自替换一次；每轮只能选1个叠加，可随时调换</div>
 
     <div class="stacked-buffs">
         <div class="stacked-buffs-title">✅ 已叠加Buff（永久累积）</div>
@@ -102,7 +103,7 @@ let currentCategory = "棱彩阶";
 let selectedBuffs = [];
 let unselectedPool = [];
 let replaceCount = [0,0,0];
-let hasChosenThisRound = false;
+let chosenIndex = -1;
 
 async function loadConfig(){
     try{
@@ -164,6 +165,7 @@ function renderSelectedList(){
     selectedBuffs.forEach((buff,idx)=>{
         let item = document.createElement("div");
         item.className = "selected-item";
+        if(idx === chosenIndex) item.classList.add("chosen");
 
         let nameSpan = document.createElement("span");
         nameSpan.className = "name-text";
@@ -191,22 +193,30 @@ function renderSelectedList(){
         let btnChoose = document.createElement("button");
         btnChoose.className = "choose-btn";
         btnChoose.innerText = "选择叠加";
-        btnChoose.disabled = hasChosenThisRound;
         btnChoose.onclick = ()=>{
-            // 直接叠加进列表，不覆盖
-            stackedBuffs.push(buff);
-            // 去重
-            stackedBuffs = [...new Set(stackedBuffs)];
+            // 先把上一轮选的取消
+            if(chosenIndex !== -1){
+                // 从列表里删掉之前的
+                let old = selectedBuffs[chosenIndex];
+                let i = stackedBuffs.indexOf(old);
+                if(i !== -1) stackedBuffs.splice(i,1);
+            }
+
+            // 选新的
+            chosenIndex = idx;
+            let newBuff = selectedBuffs[idx];
+            if(!stackedBuffs.includes(newBuff)){
+                stackedBuffs.push(newBuff);
+            }
 
             // 羁绊检测
             let syms = ['~','@','#','%','&','*','！'];
-            let findSym = syms.find(s=>buff.includes(s));
+            let findSym = syms.find(s=>newBuff.includes(s));
             if(findSym) globalBondSymbol = findSym;
 
             localStorage.setItem("stackedBuffs",JSON.stringify(stackedBuffs));
             localStorage.setItem("globalBondSymbol",globalBondSymbol||"");
 
-            hasChosenThisRound = true;
             updateBondTip();
             updateStackedBuffsList();
             document.getElementById("nextRoundBtn").disabled = false;
@@ -227,13 +237,12 @@ document.getElementById("modalCloseBtn").onclick = ()=>{
 document.getElementById("startBtn").onclick = ()=>{
     if(!buffData) return;
     let all = Object.keys(buffData[currentCategory]);
-    // 已叠加的不再抽出来
     all = all.filter(x=>!stackedBuffs.includes(x));
     let shf = [...all].sort(()=>Math.random()-0.5);
     selectedBuffs = shf.slice(0,3);
     unselectedPool = shf.slice(3);
     replaceCount = [0,0,0];
-    hasChosenThisRound = false;
+    chosenIndex = -1;
     document.getElementById("nextRoundBtn").disabled = true;
     renderSelectedList();
 };
@@ -249,7 +258,7 @@ document.getElementById("resetBtn").onclick = ()=>{
     selectedBuffs = [];
     unselectedPool = [];
     replaceCount = [0,0,0];
-    hasChosenThisRound = false;
+    chosenIndex = -1;
     updateBondTip();
     updateStackedBuffsList();
     renderSelectedList();
@@ -264,7 +273,7 @@ document.querySelectorAll(".category-btn").forEach(btn=>{
         selectedBuffs = [];
         unselectedPool = [];
         replaceCount = [0,0,0];
-        hasChosenThisRound = false;
+        chosenIndex = -1;
         renderSelectedList();
         document.getElementById("nextRoundBtn").disabled = true;
     };
