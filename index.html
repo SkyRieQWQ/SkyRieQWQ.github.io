@@ -30,7 +30,7 @@
         .title { text-align: center; color: white; margin-bottom: 30px; font-size: 28px; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .bond-global-tip{ text-align:center; color:#fff; font-size:16px; margin-bottom:15px; text-shadow:0 0 6px #000; }
         .category-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }
-        .category-btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,25,0.85); transition: all 0.3s; }
+        .category-btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.85); transition: all 0.3s; }
         .category-btn.active { background-color: #409eff; color: white; }
         .control-box { text-align: center; margin-bottom: 30px; }
         .main-btn { padding: 15px 25px; font-size: 16px; border: none; border-radius: 8px; background: rgba(103, 194, 58, 0.9); color: white; cursor: pointer; margin: 5px; transition: all 0.3s; }
@@ -41,6 +41,7 @@
         .pool-title { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: bold; }
         .selected-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f0f8ff; margin-bottom: 10px; border-radius: 6px; }
         .replace-btn { padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .replace-btn:disabled { background: #aaa; cursor: not-allowed; }
         .choose-btn { padding: 6px 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .choose-btn.active { background: #2196f3; }
         .tip { color: white; margin-top:10px; text-align:center; }
@@ -69,15 +70,15 @@
     <div class="pool-box"></div>
 
     <div class="selected-box">
-        <div class="pool-title">抽选结果</div>
+        <div class="pool-title">抽选结果（3个）</div>
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">点击卡片可查看详情</div>
+    <div class="tip">点击Buff名称可查看详情；每轮仅可替换1次；同一轮只能选1个</div>
 
     <div class="stacked-buffs">
-        <div>已选择Buff：</div>
-        <div id="stackedBuffsList">暂无</div>
+        <div class="stacked-buffs-title">✅ 已叠加Buff（永久保留）</div>
+        <div id="stackedBuffsList">暂无Buff</div>
     </div>
 
     <div class="modal-overlay" id="modalOverlay">
@@ -99,117 +100,165 @@ let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
 let currentCategory = "棱彩阶";
 let selectedBuffs = [];
 let unselectedPool = [];
-let replaceCount = {};
+let replaceCount = 0; // 全局替换次数，限制为1次
 let chosenIndex = -1;
 
+// 加载config.json
 async function loadConfig(){
     try{
-        let r = await fetch("./config.json?t="+Date.now());
-        buffData = await r.json();
+        const response = await fetch(`./config.json?time=${new Date().getTime()}`);
+        if (!response.ok) throw new Error("加载失败");
+        buffData = await response.json();
         document.getElementById("globalBondTip").innerText = "✅ 配置加载成功";
         document.getElementById("startBtn").disabled = false;
-        updateStacked();
+        updateStackedBuffsList();
     }catch(e){
-        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载完成（缓存模式）";
+        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载异常，但可继续使用";
         document.getElementById("startBtn").disabled = false;
     }
 }
 loadConfig();
 
-function updateStacked(){
-    let el = document.getElementById("stackedBuffsList");
-    el.innerHTML = stackedBuffs.length ? stackedBuffs.join(" • ") : "暂无";
+// 更新底部已选列表
+function updateStackedBuffsList(){
+    if(stackedBuffs.length === 0){
+        document.getElementById("stackedBuffsList").innerHTML = "暂无Buff";
+    }else{
+        document.getElementById("stackedBuffsList").innerHTML = stackedBuffs.join(" • ");
+    }
 }
 
-function updateTip(){
+// 更新羁绊提示
+function updateBondTip(){
     if(globalBondSymbol){
-        document.getElementById("globalBondTip").innerText = "🔒 锁定羁绊："+bondMap[globalBondSymbol];
+        const name = bondMap[globalBondSymbol] || globalBondSymbol;
+        document.getElementById("globalBondTip").innerText = `🔒 全局锁定羁绊：【${name}】跨分类生效`;
     }else{
         document.getElementById("globalBondTip").innerText = "当前无锁定羁绊";
     }
 }
 
-function render(){
-    let list = document.getElementById("selectedList");
+// 渲染抽选结果列表
+function renderSelectedList(){
+    const list = document.getElementById("selectedList");
     list.innerHTML = "";
-    selectedBuffs.forEach((b,i)=>{
-        let d = document.createElement("div");
-        d.className = "selected-item";
-        
-        let n = document.createElement("div");
-        n.innerText = (i+1)+". "+b;
-        n.onclick = ()=>{
-            document.getElementById("modalTitle").innerText = b;
-            document.getElementById("modalBody").innerText = buffData[currentCategory][b] || "无描述";
+
+    selectedBuffs.forEach((buff, index) => {
+        const div = document.createElement("div");
+        div.className = "selected-item";
+
+        // Buff名称（点击可查看详情）
+        const nameEl = document.createElement("span");
+        nameEl.textContent = `${index + 1}. ${buff}`;
+        nameEl.style.cursor = "pointer";
+        nameEl.style.color = "#409eff";
+        nameEl.onclick = () => {
+            const desc = buffData[currentCategory][buff] || "暂无说明";
+            document.getElementById("modalTitle").textContent = buff;
+            document.getElementById("modalBody").textContent = desc;
             document.getElementById("modalOverlay").style.display = "flex";
         };
-        
-        let r = document.createElement("button");
-        r.className = "replace-btn";
-        r.innerText = "替换";
-        r.onclick = ()=>{
-            if(unselectedPool.length<1)return;
-            selectedBuffs[i] = unselectedPool[Math.floor(Math.random()*unselectedPool.length)];
-            render();
+
+        // 替换按钮（每轮只能点1次）
+        const replaceBtn = document.createElement("button");
+        replaceBtn.className = "replace-btn";
+        replaceBtn.textContent = "替换";
+        replaceBtn.disabled = replaceCount >= 1;
+        replaceBtn.onclick = () => {
+            if(unselectedPool.length === 0 || replaceCount >= 1) return;
+            // 替换逻辑：从剩余池里随机换一个
+            const newBuff = unselectedPool[Math.floor(Math.random() * unselectedPool.length)];
+            selectedBuffs[index] = newBuff;
+            unselectedPool = unselectedPool.filter(b => b !== newBuff);
+            replaceCount++;
+            renderSelectedList();
         };
-        
-        let c = document.createElement("button");
-        c.className = "choose-btn";
-        c.innerText = chosenIndex===i ? "已选择" : "选择";
-        c.onclick = ()=>{
-            chosenIndex = i;
-            stackedBuffs = [selectedBuffs[i]];
-            const syms = ['~','@','#','%','&','*','！'];
-            globalBondSymbol = syms.find(s=>selectedBuffs[i].includes(s))||null;
-            localStorage.setItem("globalBondSymbol",globalBondSymbol);
-            localStorage.setItem("stackedBuffs",JSON.stringify(stackedBuffs));
-            updateStacked();
-            updateTip();
+
+        // 选择按钮
+        const chooseBtn = document.createElement("button");
+        chooseBtn.className = "choose-btn";
+        chooseBtn.textContent = chosenIndex === index ? "已选择" : "选择";
+        if (chosenIndex === index) chooseBtn.classList.add("active");
+        chooseBtn.onclick = () => {
+            chosenIndex = index;
+            const targetBuff = selectedBuffs[index];
+            // 更新已选列表
+            stackedBuffs = [targetBuff];
+            // 更新羁绊锁定
+            const symbols = ['~','@','#','%','&','*','！'];
+            globalBondSymbol = symbols.find(s => targetBuff.includes(s)) || null;
+            // 保存到本地
+            localStorage.setItem("globalBondSymbol", globalBondSymbol || "");
+            localStorage.setItem("stackedBuffs", JSON.stringify(stackedBuffs));
+            // 更新界面
+            updateStackedBuffsList();
+            updateBondTip();
             document.getElementById("nextRoundBtn").disabled = false;
-            render();
+            renderSelectedList();
         };
-        
-        d.append(n,r,c);
-        list.appendChild(d);
+
+        div.append(nameEl, replaceBtn, chooseBtn);
+        list.appendChild(div);
     });
 }
 
-document.getElementById("modalCloseBtn").onclick = ()=>{
+// 关闭详情弹窗
+document.getElementById("modalCloseBtn").onclick = () => {
     document.getElementById("modalOverlay").style.display = "none";
 };
 
-document.getElementById("startBtn").onclick = ()=>{
-    let all = Object.keys(buffData[currentCategory]).filter(x=>!stackedBuffs.includes(x));
-    let shf = [...all].sort(()=>Math.random()-0.5);
-    selectedBuffs = shf.slice(0,3);
-    unselectedPool = shf.slice(3);
+// 开始抽选
+document.getElementById("startBtn").onclick = () => {
+    if(!buffData) return;
+    const allBuffs = Object.keys(buffData[currentCategory]).filter(name => !stackedBuffs.includes(name));
+    const shuffledAll = [...allBuffs].sort(() => Math.random() - 0.5);
+    selectedBuffs = shuffledAll.slice(0, 3);
+    unselectedPool = shuffledAll.slice(3);
+    replaceCount = 0; // 重置替换次数
     chosenIndex = -1;
-    render();
+    renderSelectedList();
     document.getElementById("nextRoundBtn").disabled = true;
 };
 
-document.getElementById("nextRoundBtn").onclick = ()=>{
+// 下一轮抽选
+document.getElementById("nextRoundBtn").onclick = () => {
     document.getElementById("startBtn").click();
 };
 
-document.getElementById("resetBtn").onclick = ()=>{
+// 重置全部
+document.getElementById("resetBtn").onclick = () => {
+    localStorage.clear();
     globalBondSymbol = null;
     stackedBuffs = [];
-    localStorage.clear();
-    updateStacked();
-    updateTip();
+    selectedBuffs = [];
+    unselectedPool = [];
+    replaceCount = 0;
+    chosenIndex = -1;
+    updateStackedBuffsList();
+    updateBondTip();
+    renderSelectedList();
+    document.getElementById("nextRoundBtn").disabled = true;
 };
 
-document.querySelectorAll(".category-btn").forEach(btn=>{
-    btn.onclick = ()=>{
-        document.querySelectorAll(".category-btn").forEach(b=>b.classList.remove("active"));
+// 切换分类
+document.querySelectorAll(".category-btn").forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentCategory = btn.dataset.type;
+        // 切换分类后重置当前轮
+        selectedBuffs = [];
+        unselectedPool = [];
+        replaceCount = 0;
+        chosenIndex = -1;
+        renderSelectedList();
+        document.getElementById("nextRoundBtn").disabled = true;
     };
 });
 
-updateTip();
-updateStacked();
+// 初始化
+updateBondTip();
+updateStackedBuffsList();
 </script>
 </body>
 </html>
