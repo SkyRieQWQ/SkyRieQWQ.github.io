@@ -17,7 +17,6 @@
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
-            position: relative;
             padding-bottom: 180px;
         }
         body::before {
@@ -30,10 +29,10 @@
         .title { text-align: center; color: white; margin-bottom: 30px; font-size: 28px; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .bond-global-tip{ text-align:center; color:#fff; font-size:16px; margin-bottom:15px; text-shadow:0 0 6px #000; }
         .category-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }
-        .category-btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.85); transition: all 0.3s; }
+        .category-btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.85); }
         .category-btn.active { background-color: #409eff; color: white; }
         .control-box { text-align: center; margin-bottom: 30px; }
-        .main-btn { padding: 15px 25px; font-size: 16px; border: none; border-radius: 8px; background: rgba(103, 194, 58, 0.9); color: white; cursor: pointer; margin: 5px; transition: all 0.3s; }
+        .main-btn { padding: 15px 25px; font-size: 16px; border: none; border-radius: 8px; background: rgba(103, 194, 58, 0.9); color: white; cursor: pointer; margin: 5px; }
         .main-btn:disabled { background: #999; cursor: not-allowed; }
         .next-round-btn { background: #409eff; }
         .pool-box { display: none !important; }
@@ -45,8 +44,9 @@
         .choose-btn { padding: 6px 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .choose-btn.active { background: #2196f3; }
         .tip { color: white; margin-top:10px; text-align:center; }
-        .stacked-buffs{ position: fixed; left:0; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:15px; color:white; z-index:99; }
-        .stacked-buff-tag { display: inline-block; background: #409eff; color: white; padding: 4px 8px; border-radius: 4px; margin: 0 5px; cursor: pointer; }
+        .stacked-buffs{ position: fixed; left:0; bottom:0; width:100%; background:rgba(0,0,0,0.85); padding:15px; color:white; z-index:99; }
+        .stacked-buff-tag { display: inline-block; background: #409eff; color: white; padding: 4px 8px; border-radius: 4px; margin: 3px 5px; cursor: pointer; }
+        .name-text { cursor: pointer; color: #409eff; font-weight: bold; }
         .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:1000; }
         .modal-content { background:white; padding:25px; border-radius:12px; width:90%; max-width:500px; }
         .modal-close-btn { padding:10px 25px; background:#409eff; color:white; border:none; border-radius:6px; cursor:pointer; margin-top:15px; }
@@ -63,22 +63,22 @@
     </div>
 
     <div class="control-box">
-        <button class="main-btn" id="startBtn" disabled>开始抽选</button>
-        <button class="main-btn next-round-btn" id="nextRoundBtn" disabled>下一轮</button>
+        <button class="main-btn" id="startBtn" disabled>开始本轮抽选</button>
+        <button class="main-btn next-round-btn" id="nextRoundBtn" disabled>下一轮抽选</button>
         <button class="main-btn" id="resetBtn">重置全部</button>
     </div>
 
     <div class="pool-box"></div>
 
     <div class="selected-box">
-        <div class="pool-title">抽选结果（3个）</div>
+        <div class="pool-title">本轮3个Buff</div>
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">点击Buff名称或底部标签可查看详情；每个Buff可替换1次；同一轮只能选1个</div>
+    <div class="tip">点击Buff名称可查看详情；每个Buff可各自替换一次；每轮只能选1个叠加到列表</div>
 
     <div class="stacked-buffs">
-        <div class="stacked-buffs-title">✅ 已叠加Buff（永久保留）</div>
+        <div class="stacked-buffs-title">✅ 已叠加Buff（永久累积）</div>
         <div id="stackedBuffsList">暂无Buff</div>
     </div>
 
@@ -101,186 +101,175 @@ let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
 let currentCategory = "棱彩阶";
 let selectedBuffs = [];
 let unselectedPool = [];
-// 每个位置的替换次数，0=未替换，1=已替换
-let replaceCount = [0, 0, 0];
-let chosenIndex = -1;
+let replaceCount = [0,0,0];
+let hasChosenThisRound = false;
 
-// 加载config.json
 async function loadConfig(){
     try{
-        const response = await fetch(`./config.json?time=${new Date().getTime()}`);
-        if (!response.ok) throw new Error("加载失败");
-        buffData = await response.json();
+        let res = await fetch(`./config.json?t=${Date.now()}`);
+        buffData = await res.json();
         document.getElementById("globalBondTip").innerText = "✅ 配置加载成功";
         document.getElementById("startBtn").disabled = false;
         updateStackedBuffsList();
     }catch(e){
-        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载异常，但可继续使用";
+        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载异常";
         document.getElementById("startBtn").disabled = false;
     }
 }
 loadConfig();
 
-// 更新底部已选列表（可点击查看详情）
-function updateStackedBuffsList(){
-    const el = document.getElementById("stackedBuffsList");
-    if(stackedBuffs.length === 0){
-        el.innerHTML = "暂无Buff";
-    }else{
-        el.innerHTML = stackedBuffs.map(buff => {
-            return `<span class="stacked-buff-tag" data-name="${buff}">${buff}</span>`;
-        }).join("");
-        
-        // 给每个标签添加点击事件
-        el.querySelectorAll(".stacked-buff-tag").forEach(tag => {
-            tag.onclick = () => {
-                const buffName = tag.dataset.name;
-                // 找这个Buff属于哪个分类
-                let category = null;
-                for (const c of Object.keys(buffData)) {
-                    if (buffData[c][buffName]) {
-                        category = c;
-                        break;
-                    }
-                }
-                const desc = buffData[category][buffName] || "暂无说明";
-                document.getElementById("modalTitle").textContent = buffName;
-                document.getElementById("modalBody").textContent = desc;
-                document.getElementById("modalOverlay").style.display = "flex";
-            };
-        });
+function getBuffDesc(name){
+    for(let cat in buffData){
+        if(buffData[cat][name]){
+            return buffData[cat][name];
+        }
     }
+    return "暂无效果说明";
 }
 
-// 更新羁绊提示
+function updateStackedBuffsList(){
+    let el = document.getElementById("stackedBuffsList");
+    if(stackedBuffs.length === 0){
+        el.innerHTML = "暂无Buff";
+        return;
+    }
+    let html = "";
+    stackedBuffs.forEach(name=>{
+        html += `<span class="stacked-buff-tag" data-name="${name}">${name}</span>`;
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".stacked-buff-tag").forEach(tag=>{
+        tag.onclick = ()=>{
+            let n = tag.dataset.name;
+            document.getElementById("modalTitle").innerText = n;
+            document.getElementById("modalBody").innerText = getBuffDesc(n);
+            document.getElementById("modalOverlay").style.display = "flex";
+        };
+    });
+}
+
 function updateBondTip(){
     if(globalBondSymbol){
-        const name = bondMap[globalBondSymbol] || globalBondSymbol;
-        document.getElementById("globalBondTip").innerText = `🔒 全局锁定羁绊：【${name}】跨分类生效`;
+        let n = bondMap[globalBondSymbol] || globalBondSymbol;
+        document.getElementById("globalBondTip").innerText = `🔒 羁绊锁定：${n}`;
     }else{
         document.getElementById("globalBondTip").innerText = "当前无锁定羁绊";
     }
 }
 
-// 渲染抽选结果列表
 function renderSelectedList(){
-    const list = document.getElementById("selectedList");
+    let list = document.getElementById("selectedList");
     list.innerHTML = "";
 
-    selectedBuffs.forEach((buff, index) => {
-        const div = document.createElement("div");
-        div.className = "selected-item";
+    selectedBuffs.forEach((buff,idx)=>{
+        let item = document.createElement("div");
+        item.className = "selected-item";
 
-        // Buff名称（点击可查看详情）
-        const nameEl = document.createElement("span");
-        nameEl.textContent = `${index + 1}. ${buff}`;
-        nameEl.style.cursor = "pointer";
-        nameEl.style.color = "#409eff";
-        nameEl.onclick = () => {
-            const desc = buffData[currentCategory][buff] || "暂无说明";
-            document.getElementById("modalTitle").textContent = buff;
-            document.getElementById("modalBody").textContent = desc;
+        let nameSpan = document.createElement("span");
+        nameSpan.className = "name-text";
+        nameSpan.innerText = `${idx+1}. ${buff}`;
+        nameSpan.onclick = ()=>{
+            document.getElementById("modalTitle").innerText = buff;
+            document.getElementById("modalBody").innerText = getBuffDesc(buff);
             document.getElementById("modalOverlay").style.display = "flex";
         };
 
-        // 替换按钮（每个位置只能替换1次）
-        const replaceBtn = document.createElement("button");
-        replaceBtn.className = "replace-btn";
-        replaceBtn.textContent = "替换";
-        replaceBtn.disabled = replaceCount[index] >= 1;
-        replaceBtn.onclick = () => {
-            if(unselectedPool.length === 0 || replaceCount[index] >= 1) return;
-            // 替换逻辑：从剩余池里随机换一个
-            const newBuff = unselectedPool[Math.floor(Math.random() * unselectedPool.length)];
-            selectedBuffs[index] = newBuff;
-            unselectedPool = unselectedPool.filter(b => b !== newBuff);
-            replaceCount[index] = 1;
+        let btnReplace = document.createElement("button");
+        btnReplace.className = "replace-btn";
+        btnReplace.innerText = "替换";
+        btnReplace.disabled = replaceCount[idx] === 1;
+        btnReplace.onclick = ()=>{
+            if(unselectedPool.length===0 || replaceCount[idx]===1) return;
+            let rnd = Math.floor(Math.random()*unselectedPool.length);
+            let newB = unselectedPool[rnd];
+            unselectedPool.splice(rnd,1);
+            selectedBuffs[idx] = newB;
+            replaceCount[idx] = 1;
             renderSelectedList();
         };
 
-        // 选择按钮
-        const chooseBtn = document.createElement("button");
-        chooseBtn.className = "choose-btn";
-        chooseBtn.textContent = chosenIndex === index ? "已选择" : "选择";
-        if (chosenIndex === index) chooseBtn.classList.add("active");
-        chooseBtn.onclick = () => {
-            chosenIndex = index;
-            const targetBuff = selectedBuffs[index];
-            // 更新已选列表
-            stackedBuffs = [targetBuff];
-            // 更新羁绊锁定
-            const symbols = ['~','@','#','%','&','*','！'];
-            globalBondSymbol = symbols.find(s => targetBuff.includes(s)) || null;
-            // 保存到本地
-            localStorage.setItem("globalBondSymbol", globalBondSymbol || "");
-            localStorage.setItem("stackedBuffs", JSON.stringify(stackedBuffs));
-            // 更新界面
-            updateStackedBuffsList();
+        let btnChoose = document.createElement("button");
+        btnChoose.className = "choose-btn";
+        btnChoose.innerText = "选择叠加";
+        btnChoose.disabled = hasChosenThisRound;
+        btnChoose.onclick = ()=>{
+            // 直接叠加进列表，不覆盖
+            stackedBuffs.push(buff);
+            // 去重
+            stackedBuffs = [...new Set(stackedBuffs)];
+
+            // 羁绊检测
+            let syms = ['~','@','#','%','&','*','！'];
+            let findSym = syms.find(s=>buff.includes(s));
+            if(findSym) globalBondSymbol = findSym;
+
+            localStorage.setItem("stackedBuffs",JSON.stringify(stackedBuffs));
+            localStorage.setItem("globalBondSymbol",globalBondSymbol||"");
+
+            hasChosenThisRound = true;
             updateBondTip();
+            updateStackedBuffsList();
             document.getElementById("nextRoundBtn").disabled = false;
             renderSelectedList();
         };
 
-        div.append(nameEl, replaceBtn, chooseBtn);
-        list.appendChild(div);
+        item.appendChild(nameSpan);
+        item.appendChild(btnReplace);
+        item.appendChild(btnChoose);
+        list.appendChild(item);
     });
 }
 
-// 关闭详情弹窗
-document.getElementById("modalCloseBtn").onclick = () => {
+document.getElementById("modalCloseBtn").onclick = ()=>{
     document.getElementById("modalOverlay").style.display = "none";
 };
 
-// 开始抽选
-document.getElementById("startBtn").onclick = () => {
+document.getElementById("startBtn").onclick = ()=>{
     if(!buffData) return;
-    const allBuffs = Object.keys(buffData[currentCategory]).filter(name => !stackedBuffs.includes(name));
-    const shuffledAll = [...allBuffs].sort(() => Math.random() - 0.5);
-    selectedBuffs = shuffledAll.slice(0, 3);
-    unselectedPool = shuffledAll.slice(3);
-    replaceCount = [0, 0, 0]; // 重置每个位置的替换次数
-    chosenIndex = -1;
-    renderSelectedList();
+    let all = Object.keys(buffData[currentCategory]);
+    // 已叠加的不再抽出来
+    all = all.filter(x=>!stackedBuffs.includes(x));
+    let shf = [...all].sort(()=>Math.random()-0.5);
+    selectedBuffs = shf.slice(0,3);
+    unselectedPool = shf.slice(3);
+    replaceCount = [0,0,0];
+    hasChosenThisRound = false;
     document.getElementById("nextRoundBtn").disabled = true;
+    renderSelectedList();
 };
 
-// 下一轮抽选
-document.getElementById("nextRoundBtn").onclick = () => {
+document.getElementById("nextRoundBtn").onclick = ()=>{
     document.getElementById("startBtn").click();
 };
 
-// 重置全部
-document.getElementById("resetBtn").onclick = () => {
+document.getElementById("resetBtn").onclick = ()=>{
     localStorage.clear();
     globalBondSymbol = null;
     stackedBuffs = [];
     selectedBuffs = [];
     unselectedPool = [];
-    replaceCount = [0, 0, 0];
-    chosenIndex = -1;
-    updateStackedBuffsList();
+    replaceCount = [0,0,0];
+    hasChosenThisRound = false;
     updateBondTip();
+    updateStackedBuffsList();
     renderSelectedList();
     document.getElementById("nextRoundBtn").disabled = true;
 };
 
-// 切换分类
-document.querySelectorAll(".category-btn").forEach(btn => {
-    btn.onclick = () => {
-        document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
+document.querySelectorAll(".category-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+        document.querySelectorAll(".category-btn").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         currentCategory = btn.dataset.type;
-        // 切换分类后重置当前轮
         selectedBuffs = [];
         unselectedPool = [];
-        replaceCount = [0, 0, 0];
-        chosenIndex = -1;
+        replaceCount = [0,0,0];
+        hasChosenThisRound = false;
         renderSelectedList();
         document.getElementById("nextRoundBtn").disabled = true;
     };
 });
 
-// 初始化
 updateBondTip();
 updateStackedBuffsList();
 </script>
