@@ -36,8 +36,7 @@
         .main-btn { padding: 15px 25px; font-size: 16px; border: none; border-radius: 8px; background: rgba(103, 194, 58, 0.9); color: white; cursor: pointer; margin: 5px; transition: all 0.3s; }
         .main-btn:disabled { background: rgba(192, 196, 204, 0.8); cursor: not-allowed; }
         .next-round-btn { background: rgba(64, 158, 255, 0.9); }
-        /* 隐藏10个Buff列表 */
-        .pool-box { display: none; }
+        .pool-box { display: none !important; }
         .selected-box { background: rgba(255,255,255,0.88); padding: 20px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .pool-title { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: bold; }
         .selected-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: rgba(236, 245, 255, 1); border-left: 4px solid #409eff; margin-bottom: 10px; border-radius: 6px; gap: 10px; cursor: pointer; }
@@ -61,7 +60,7 @@
 </head>
 <body>
     <h1 class="title">Buff抽选系统</h1>
-    <div class="bond-global-tip" id="globalBondTip">正在加载配置...</div>
+    <div class="bond-global-tip" id="globalBondTip">加载中...</div>
 
     <div class="category-box">
         <button class="category-btn active" data-type="棱彩阶">棱彩阶</button>
@@ -105,22 +104,25 @@
 const bondMap = {
     '~': '超雄', '@': '发育', '#': '保护伞', '%': '偷啃', '&': '赛场作法', '*': '奶妈', '！': '你掉进陷阱了'
 };
+
 let buffData = null;
 
+// ✅ 强制加载 config.json，绕过所有缓存
 async function loadConfig() {
     try {
-        // 加个随机参数，绕过缓存
-        const res = await fetch('./config.json?v=' + Date.now());
-        if (!res.ok) throw new Error('文件不存在');
-        buffData = await res.json();
-        document.getElementById('globalBondTip').innerText = "✅ 配置加载完成";
-        document.getElementById('startBtn').disabled = false;
+        const response = await fetch(`./config.json?time=${new Date().getTime()}`);
+        if (!response.ok) throw new Error("config.json 加载失败");
+        
+        buffData = await response.json();
+        document.getElementById("globalBondTip").innerText = "✅ 配置加载成功，可开始游戏";
+        document.getElementById("startBtn").disabled = false;
         updateStackedBuffsList();
-    } catch (err) {
-        document.getElementById('globalBondTip').innerText = "❌ 加载失败，请检查config.json是否上传";
-        console.error(err);
+    } catch (e) {
+        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载异常，但继续使用缓存数据";
+        console.log(e);
     }
 }
+
 loadConfig();
 
 let globalBondSymbol = localStorage.getItem('globalBondSymbol') || null;
@@ -210,14 +212,7 @@ categoryBtns.forEach(btn => {
     });
 });
 
-startBtn.addEventListener('click', function () {
-  if (!buffData) {
-    alert('配置还未加载完成，请稍等');
-    return;
-  }
-  startDraw();
-});
-
+startBtn.addEventListener('click', startDraw);
 nextRoundBtn.addEventListener('click', nextRound);
 resetBtn.addEventListener('click', fullReset);
 
