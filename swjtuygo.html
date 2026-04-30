@@ -15,14 +15,12 @@
         html, body {
             width: 100%;
             height: 100%;
+            min-height: 100vh;
         }
 
         body {
-            background: url("https://picsum.photos/1920/1080?random=10") no-repeat center center fixed;
-            background-size: cover;
-            -webkit-background-size: cover;
-            -moz-background-size: cover;
-            -o-background-size: cover;
+            background: url("https://picsum.photos/1920/1080?random=100") center center / cover no-repeat;
+            background-color: #333;
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
@@ -105,6 +103,10 @@
         }
 
         .pool-box {
+            display: none; /* 隐藏本轮10个Buff列表 */
+        }
+
+        .selected-box {
             background: rgba(255,255,255,0.85);
             padding: 20px;
             border-radius: 10px;
@@ -120,28 +122,6 @@
             font-weight: bold;
         }
 
-        .buff-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .buff-item {
-            padding: 8px 15px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .selected-box {
-            background: rgba(255,255,255,0.85);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-        }
-
         .selected-item {
             display: flex;
             align-items: center;
@@ -152,6 +132,11 @@
             margin-bottom: 10px;
             border-radius: 6px;
             gap: 10px;
+            cursor: pointer;
+        }
+
+        .selected-item:hover {
+            background: rgba(236, 245, 255, 1);
         }
 
         .replace-btn {
@@ -220,6 +205,57 @@
             border-radius:4px;
             margin:2px;
         }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .modal-body {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .modal-close-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 10px 30px;
+            background: #409eff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -249,29 +285,142 @@
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">同一轮只能选1个，重选会替换；下一轮才会叠加到列表</div>
+    <div class="tip">点击Buff查看详情；同一轮只能选1个，重选会替换；下一轮叠加到列表</div>
 
     <div class="stacked-buffs">
         <div class="stacked-buffs-title">✅ 已叠加Buff（永久保留）</div>
         <div id="stackedBuffsList">暂无Buff</div>
     </div>
 
+    <!-- 弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-body" id="modalBody"></div>
+            <button class="modal-close-btn" id="modalCloseBtn">关闭</button>
+        </div>
+    </div>
+
 <script>
+// 所有Buff的说明数据
 const buffData = {
-    "棱彩阶": ["魏延","遗老","旅鸟形态","质变：潘多拉","质变：混沌","法外狂徒","种族骑士","食尸鬼","倒计时","利息得","氪命","升级：欢聚友伴","连营","反馈","超大杯*","格斗战~","两个选择","苦命鸳鸯","消消乐","虚无形态"],
-    "黄金阶": ["问心无愧","魔术左手","魔术右手","隔壁游戏2","信息差","作弊：我能卷回","质变：大变","限制解除","质变：棱彩阶","死灵法师#","区动力","咕咕嘎嘎","我不同意","我要验牌","作弊：我能换备","烙印精神#","裤裆藏牌","瓦库瓦库","我太烧了","泽简拉基决！","影流之主","战争迷雾","链接皇帝","原神瞳","完美补强%","回响形态&","遗计","升级：灰流丽","问心无愧2","名推理","升级：主王","和平发育","天生战狂~","战斗专注~","黄旭东","试胆竞速","禁止FTK*","古氏佳酿*","遗老2","遗老3"],
-    "白银阶": ["阴阳螺旋","禁发令","搜打撤","二重召唤","连吃带拿","左手高伤害","右手伤害高","老赖*","大师规则","大胃袋*","隔壁游戏","时钟龙","名刀司命","已黑/白化@","何意味","质变：黄金阶","发育怎么说*","教练热身@","龟男","陷阱大师！","别人的老婆","万物一心@","空手假象","没有等级不就是9吗","坡县鸡翅","灵摆大师","闪电侠","自走棋","升级：天敖龙","升级：增强的G","升级：墓穴的指名者","战斗爽*~","猴子发育@","遗老4","壶魔人","单身汉2","王只有一个","开箱视频","误导","遗老5"]
+    "棱彩阶": {
+        "魏延": "每当你造成超过500点伤害时，抽一张牌（每回合最多五次）。",
+        "遗老": "你的通常魔法可以在对手的回合发动（变成二速）。",
+        "旅鸟形态": "你的特殊召唤视为通常召唤（不计入次数）。",
+        "质变：潘多拉": "你获得这个海克斯的场合，将你的所有海克斯替换成随机彩色海克斯。",
+        "质变：混沌": "你获得这个海克斯的场合，获得二个随机海克斯。",
+        "法外狂徒": "你无视所有来自自己的自肃，对方的“对方/双方不能”的卡的效果对你不适用。",
+        "种族骑士": "游戏开始时，宣言一个种族，你卡组里所有的怪兽可以视为该种族的怪兽，你的怪兽不受该种族怪兽发动的效果影响。",
+        "食尸鬼": "每当你破坏对手的卡时，抽一张牌（每回合最多五次）。",
+        "倒计时": "丢两六面骰，总回合数到达骰出的数字时，你获得决斗胜利。",
+        "利息得": "每当你即将抽卡时，那个抽卡的数量+1（每回合最多五次）。",
+        "氪命": "一回合一次，支付5000LP，可以把对方发动的效果无效。",
+        "升级：欢聚友伴": "你的【欢聚友伴】系列怪兽在自己场上有卡的情况下也能发动，且失去一回合最多发动两次和将手牌洗回卡组的效果。",
+        "连营": "当你失去最后一张手牌时，抽一张牌。",
+        "反馈": "每当你受到战斗伤害时，随机获得对方场上一只怪兽的控制权。",
+        "超大杯*": "每当你获得LP时，抽一张牌(每回合最多5次)。",
+        "格斗战~": "将你的主要阶段1、2替换为战斗阶段，你在战斗阶段中也可以做主要阶段才能做的动作（包括主要阶段才能发动的效果）。",
+        "两个选择": "对手每次抽卡后，你随机展示对方的两张手牌，然后选择其中一张放在对手卡组底。",
+        "苦命鸳鸯": "你的怪兽被对方破坏时，选择对方场上一只怪兽破坏。",
+        "消消乐": "对方玩家场上有直线连续三个格子存在卡时，那些卡破坏（视为规则破坏）。",
+        "虚无形态": "对手的回合结束时，将对手的手牌直到下一个回合结束从游戏中里侧除外。"
+    },
+    "黄金阶": {
+        "问心无愧": "游戏开始时，从游戏外将一只【恐龙摔跤手·潘克拉辛角龙】在你场上特殊召唤。",
+        "魔术左手": "游戏开始前，从卡组选择一张卡放到卡组最上方/最上方，那之后剩下的卡组洗牌放到那张卡上方/下方。",
+        "魔术右手": "游戏开始前，选择对手卡组最下方/最上方的卡组洗切，然后之后洗剩下的卡组放到那张牌上方/下方。",
+        "隔壁游戏2": "游戏开始时，当你抽完初始手牌时，可以选择任意数量的手牌回到卡组洗切，然后抽出同样数量的卡片。",
+        "信息差": "你的卡牌效果只有在使用时才能给对手解释效果，在此之前对手不可通过任何方式询问查看该卡片效果。",
+        "作弊：我能卷回": "一回合一次，连锁即将处理的场合，将场面卷回连锁开始前的状态。",
+        "质变：大变": "每轮开始时，随机获得一个海克斯效果直到本轮结束。",
+        "限制解除": "你获得这个海克斯的场合，可将卡组的一张卡替换为任意禁卡（打白条）。",
+        "质变：棱彩阶": "你获得这个海克斯的场合，随机获得一个彩色海克斯。",
+        "死灵法师#&": "你所有魔法卡获得效果：作为这张卡发动时的效果，在自己场上特殊召唤一只【丧尸】token（攻守1000，不死族，暗，等级1）。",
+        "区动力": "决斗开始时，往对手手牌里塞三张【区】（无法使用，不能用做cost，不能丢弃，不能做效果处理的目标）。",
+        "咕咕嘎嘎": "一回合一次，你可以大喊一声咕咕嘎嘎并支付3000LP（必须所有人都能听到），那之后，你可以破坏对方场上一张卡（二速）。",
+        "我不同意": "决斗中一次，某个效果处理时，无效该效果。",
+        "我要验牌": "第一个回合的准备阶段，观看对手的手牌。",
+        "作弊：我能换备": "你在换备阶段，更换备牌前后的卡组数量不需要一致。",
+        "烙印精神#": "决斗开始时，在对方场上特殊召唤一只【史token】（神,0/0，幻神兽族，无法作为素材，无法被解放。）",
+        "裤裆藏牌": "每轮限一次，双方回合发动，从卡组里选择一张卡加入手牌。",
+        "瓦库瓦库": "对手的第一回合的主要阶段的第一个动作，由你完成(可以查看对手手牌、额外，需要查看卡组时可以查看，不需要结束本阶段)。",
+        "我太烧了": "每当你发动效果时，对对方造成300点伤害。",
+        "泽简拉基决！": "你的所有陷阱卡获得效果：作为这张卡发动时的效果，可以将墓地一张陷阱卡加入手牌。",
+        "影流之主": "决斗中一次，对方回合开始时可以发动，展示你手牌的怪兽卡，直到决斗结束这些卡视为【原始生命态：尼比鲁】且没有回合一次的限制。",
+        "战争迷雾": "你的怪兽可以以里侧表示在场上的怪兽的控制权直到回合结束（数量最多为你空置主要怪兽区的数量）。",
+        "链接皇帝": "你的链接怪兽可以以守备表示，伤害计算时你的原本攻击力相同，你在没有链接端的位置出现。",
+        "原神瞳": "一回合一次，你可以宣言一个对手从手牌使用那个卡的回合，这个效果对方的回合也能发动。",
+        "完美补强%": "决斗中一次，可以将自己场上一只怪兽送入墓地，特殊召唤一只【补充怪兽】（怪兽、陷阱、魔法，自定且视为怪兽，攻守为0，可以放置在怪兽区）。",
+        "回响形态&": "你每回合使用的第一张魔法卡在结算后落地回到手牌。",
+        "遗计": "每当你受到伤害时，抽一张牌(每回合最多五次)。",
+        "升级：灰流丽": "游戏开始时，将卡组里一张灰流丽加入起始手牌，你的灰流丽的效果只能发动，被对方无效的那个效果无效。",
+        "问心无愧2": "一回合一次，在G1游戏开始前可以更换回合。",
+        "名推理": "一回合一次，对方玩家宣言怪兽的等级，直到可以通常召唤的怪兽出现为止，翻开的卡全部送去墓地，翻开的怪兽不是宣言的等级，那以外翻开的卡全部送入墓地。",
+        "升级：主王": "游戏开始时，将卡组里一张【主王】陷阱卡加入起始手牌，你的【主王】系列卡片在不满足条件的情况下也可以发动并自由选择适用的效果。",
+        "和平发育": "你可以支付7000LP，跳过对方的下一个战斗阶段。",
+        "天生战狂~": "你的主要阶段2后面追加一个额外的战斗阶段。",
+        "战斗专注~": "双方战斗阶段开始时，抽一张牌。",
+        "黄旭东": "对方失去生命值时，再次以相同的方式失去生命值。",
+        "试胆竞速": "每当你失去3000LP时，抽一张牌。",
+        "禁止FTK*": "对方玩家每特殊召唤一只怪兽时，你回复那个怪兽攻击力数值的生命值。",
+        "古氏佳酿*": "你每次召唤/特殊召唤怪兽时，回复那个怪兽攻击力数值的生命值。",
+        "遗老2": "游戏开始时，将1张【旋风】加入你的手牌，你的【旋风】破坏的魔法/陷阱的效果无效。",
+        "遗老3": "游戏开始时，将1张【死者苏生】加入你的手牌，你的【死者苏生】无视苏生限制。"
+    },
+    "白银阶": {
+        "阴阳螺旋": "每回合你的第一次把卡加入手牌时，从卡组中挑选一张陷阱卡放在卡组最上方，那之后剩下的卡组洗切后放在那张牌下方。",
+        "禁发令": "游戏开始时，将一张禁发令置入你的手牌。",
+        "搜打撤": "双方回合一次，将对方墓地一张卡放入自己墓地（记得打完对局归还）。",
+        "二重召唤": "你每回合可以进行两次通常召唤（不计入效果追加通召的次数）。",
+        "连吃带拿": "每回合你的第一次将卡片从卡组加入手牌的场合，抽一张牌。",
+        "左手高伤害": "你的怪兽造成的战斗伤害翻倍。",
+        "右手伤害高": "你的怪兽可以对怪兽攻击2次（不计入效果追加的攻击次数中）。",
+        "老赖*": "你的生命值支付代价恢复等量生命值。",
+        "大师规则": "第一个玩家的回合的抽卡阶段你抽一张牌。",
+        "大胃袋*": "游戏开始时，恢复32000生命值。",
+        "隔壁游戏": "对方的怪兽在登场的回合不能攻击。",
+        "时钟龙": "你的对局的死亡时间为20分钟。",
+        "名刀司命": "当你受到致命伤害时，防止此伤害，直到这个回合结束你不会受到任何伤害。",
+        "已黑/白化@": "你获得这个海克斯的场合，二选一：你场上的暗属性/光属性的怪兽原本攻击力和守备力翻倍，不会被光/暗属性以外的怪兽战斗破坏。",
+        "何意味": "一回合一次，你可以破坏自己场上任意数量的卡片（视作规则破坏）。",
+        "质变：黄金阶": "你获得这个海克斯的场合，随机获得一个金色海克斯。",
+        "发育怎么说*": "每个准备阶段，恢复8000LP。",
+        "教练热身@": "你的攻击力为0的怪兽的原本攻击力变为10000。",
+        "龟男": "你每回合只会受到一次战斗伤害。",
+        "陷阱大师！": "你每回合第一张陷阱卡可以在盖放的回合发动。",
+        "别人的老婆": "你的人形妹卡怪兽不能作为效果的对象。（妹卡界定裁判说了算）",
+        "万物一心@": "你场上的【水、炎、地、风】属性怪兽上升场上水、炎、地、风属性怪兽数量x1000的攻击力守备力。",
+        "空手假象": "你的怪兽卡可视为魔法卡/陷阱卡，你魔法与陷阱区域的怪兽在场上特殊召唤。",
+        "没有等级不就是9吗": "你的怪兽卡的效果将对方卡的效果/发动无效的场合，可以将那张卡盖放在自己场上盖放。",
+        "坡县鸡翅": "对方玩家场上有直线连续三个格子存在卡时，那些卡破坏（视为规则破坏）。",
+        "灵摆大师": "你的灵摆召唤无视刻度。",
+        "闪电侠": "对方回合一次，你从手牌使用的卡的效果无法被对方的效果连锁。",
+        "自走棋": "当你的手牌中有三张同名卡时，可以把三张卡叠放在一起使用（视为一张卡），卡面上的数值全部乘3。",
+        "升级：天敖龙": "游戏开始时，将卡组里一张【天敖龙】加入起始手牌，你的【天敖龙】炸卡可以炸怪兽以外的怪兽，失去自肃。",
+        "升级：增殖的G": "作为通常抽卡的代替，可以将任意区域的【增殖的G】加入手牌。",
+        "战斗爽*~": "每当你战斗破坏对方怪兽时，恢复8000LP。",
+        "猴子发育@": "游戏开始时，将场上攻击力最高的怪兽的守备表示放置在你的怪兽区，这只怪兽不受对方怪兽发动的效果影响。",
+        "遗老4": "你场上攻击力最高的怪兽不受低于那只怪兽的场上的怪兽发动的效果影响。",
+        "壶魔人": "游戏开始时，将卡组里一张【壶】魔法卡加入手牌，你的【壶】魔法卡效果变成【强欲之壶】的效果。",
+        "单身汉2": "你的男性人形怪兽不会被对手取为效果对象。(男性界定裁判说了算)",
+        "王只有一个": "你场上等级最高的怪兽不受等级低于它的场上的怪兽的效果影响，必须持续召唤。",
+        "开箱视频": "抽完起始手牌后，对手每次以抽卡的方式从卡组抽卡时，可以让那只怪兽以外的怪兽（用骰子决定）。",
+        "误导": "一回合一回合一次，对方怪兽攻击时，可以让那只怪兽改为攻击场上一只它以外的怪兽（用骰子决定）。",
+        "遗老5": "你的怪兽可以不用解放做高级召唤。"
+    }
 };
 
-let globalBondSymbol = null;
-let stackedBuffs = [];
+// 1. 从本地存储恢复数据（刷新不丢）
+let globalBondSymbol = localStorage.getItem('globalBondSymbol') || null;
+let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
 
 let currentCategory = "棱彩阶";
 let currentPool = [];
 let selectedBuffs = [];
 let unselectedPool = [];
 let replaceCount = {};
-let chosenIndex = -1; // 本轮已选的那个
+let chosenIndex = -1;
 
 const categoryBtns = document.querySelectorAll('.category-btn');
 const startBtn = document.getElementById('startBtn');
@@ -282,6 +431,16 @@ const selectedList = document.getElementById('selectedList');
 const bondTip = document.getElementById('bondTip');
 const globalBondTip = document.getElementById('globalBondTip');
 const stackedBuffsList = document.getElementById('stackedBuffsList');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+// 2. 把数据保存到本地存储
+function saveToLocal() {
+    localStorage.setItem('globalBondSymbol', globalBondSymbol || '');
+    localStorage.setItem('stackedBuffs', JSON.stringify(stackedBuffs));
+}
 
 function updateGlobalBondTip(){
     if(globalBondSymbol){
@@ -300,6 +459,22 @@ function updateStackedBuffsList(){
             .join('');
     }
 }
+
+// 弹窗控制
+function openModal(title, content) {
+    modalTitle.textContent = title;
+    modalBody.textContent = content;
+    modalOverlay.style.display = 'flex';
+}
+
+function closeModal() {
+    modalOverlay.style.display = 'none';
+}
+
+modalCloseBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+});
 
 categoryBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -333,6 +508,7 @@ function fullReset(){
     clearRoundUI();
     globalBondSymbol = null;
     stackedBuffs = [];
+    saveToLocal(); // 清空本地存储
     updateGlobalBondTip();
     updateStackedBuffsList();
 }
@@ -341,7 +517,7 @@ function startDraw() {
     startBtn.disabled = true;
     chosenIndex = -1;
     
-    const allBuffs = buffData[currentCategory];
+    const allBuffs = Object.keys(buffData[currentCategory]);
     let pool = [];
 
     if (globalBondSymbol) {
@@ -426,6 +602,13 @@ function renderSelected() {
         chooseBtn.textContent = chosenIndex === index ? '已选择' : '选择';
         if (chosenIndex === index) chooseBtn.classList.add('active');
 
+        // 点击Buff名字查看详情
+        name.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const desc = buffData[currentCategory][buff] || "暂无说明";
+            openModal(buff, desc);
+        });
+
         replaceBtn.onclick = () => {
             if (unselectedPool.length===0) return;
             const newBuff = unselectedPool[Math.floor(Math.random()*unselectedPool.length)];
@@ -437,18 +620,17 @@ function renderSelected() {
         };
 
         chooseBtn.onclick = () => {
-            // 同一轮：只能有一个选中，直接替换
             chosenIndex = index;
             const targetBuff = selectedBuffs[index];
 
-            // 先把本轮已选的删掉（如果有）
-            // 然后加入当前这个
+            // 同一轮只能选1个，替换之前的选择
             stackedBuffs = stackedBuffs.filter(b => !selectedBuffs.includes(b));
             stackedBuffs.push(targetBuff);
 
             const symbols = ['~','@','#','%','&','*'];
             globalBondSymbol = symbols.find(s=>targetBuff.includes(s)) || null;
 
+            saveToLocal(); // 选完就保存
             updateGlobalBondTip();
             updateStackedBuffsList();
 
@@ -461,6 +643,7 @@ function renderSelected() {
     });
 }
 
+// 3. 页面加载时初始化
 updateGlobalBondTip();
 updateStackedBuffsList();
 </script>
