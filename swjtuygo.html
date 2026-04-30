@@ -19,7 +19,12 @@
         }
 
         body {
-            background: url("galatea.jpg") center center / cover no-repeat;
+            /* 兼容所有浏览器的背景写法，拆分成独立属性 */
+            background-image: url("galatea.jpg");
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: cover;
+            background-attachment: fixed;
             background-color: #333;
             padding: 20px;
             max-width: 1200px;
@@ -103,7 +108,7 @@
         }
 
         .pool-box {
-            display: none; /* 隐藏本轮10个Buff列表 */
+            display: none;
         }
 
         .selected-box {
@@ -206,7 +211,6 @@
             margin:2px;
         }
 
-        /* 弹窗样式 */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -292,7 +296,6 @@
         <div id="stackedBuffsList">暂无Buff</div>
     </div>
 
-    <!-- 弹窗 -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
             <div class="modal-title" id="modalTitle"></div>
@@ -302,7 +305,6 @@
     </div>
 
 <script>
-// 所有Buff的说明数据
 const buffData = {
     "棱彩阶": {
         "魏延": "每当你造成超过500点伤害时，抽一张牌（每回合最多五次）。",
@@ -411,7 +413,6 @@ const buffData = {
     }
 };
 
-// 1. 从本地存储恢复数据（刷新不丢）
 let globalBondSymbol = localStorage.getItem('globalBondSymbol') || null;
 let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
 
@@ -436,7 +437,6 @@ const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
 const modalCloseBtn = document.getElementById('modalCloseBtn');
 
-// 2. 把数据保存到本地存储
 function saveToLocal() {
     localStorage.setItem('globalBondSymbol', globalBondSymbol || '');
     localStorage.setItem('stackedBuffs', JSON.stringify(stackedBuffs));
@@ -460,7 +460,6 @@ function updateStackedBuffsList(){
     }
 }
 
-// 弹窗控制
 function openModal(title, content) {
     modalTitle.textContent = title;
     modalBody.textContent = content;
@@ -508,7 +507,7 @@ function fullReset(){
     clearRoundUI();
     globalBondSymbol = null;
     stackedBuffs = [];
-    saveToLocal(); // 清空本地存储
+    saveToLocal();
     updateGlobalBondTip();
     updateStackedBuffsList();
 }
@@ -602,7 +601,6 @@ function renderSelected() {
         chooseBtn.textContent = chosenIndex === index ? '已选择' : '选择';
         if (chosenIndex === index) chooseBtn.classList.add('active');
 
-        // 点击Buff名字查看详情
         name.addEventListener('click', (e) => {
             e.stopPropagation();
             const desc = buffData[currentCategory][buff] || "暂无说明";
@@ -623,14 +621,13 @@ function renderSelected() {
             chosenIndex = index;
             const targetBuff = selectedBuffs[index];
 
-            // 同一轮只能选1个，替换之前的选择
             stackedBuffs = stackedBuffs.filter(b => !selectedBuffs.includes(b));
             stackedBuffs.push(targetBuff);
 
             const symbols = ['~','@','#','%','&','*'];
             globalBondSymbol = symbols.find(s=>targetBuff.includes(s)) || null;
 
-            saveToLocal(); // 选完就保存
+            saveToLocal();
             updateGlobalBondTip();
             updateStackedBuffsList();
 
@@ -643,7 +640,6 @@ function renderSelected() {
     });
 }
 
-// 3. 页面加载时初始化
 updateGlobalBondTip();
 updateStackedBuffsList();
 </script>
