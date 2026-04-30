@@ -30,37 +30,29 @@
         .title { text-align: center; color: white; margin-bottom: 30px; font-size: 28px; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .bond-global-tip{ text-align:center; color:#fff; font-size:16px; margin-bottom:15px; text-shadow:0 0 6px #000; }
         .category-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }
-        .category-btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.85); transition: all 0.3s; }
+        .category-btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,25,0.85); transition: all 0.3s; }
         .category-btn.active { background-color: #409eff; color: white; }
         .control-box { text-align: center; margin-bottom: 30px; }
         .main-btn { padding: 15px 25px; font-size: 16px; border: none; border-radius: 8px; background: rgba(103, 194, 58, 0.9); color: white; cursor: pointer; margin: 5px; transition: all 0.3s; }
-        .main-btn:disabled { background: rgba(192, 196, 204, 0.8); cursor: not-allowed; }
-        .next-round-btn { background: rgba(64, 158, 255, 0.9); }
+        .main-btn:disabled { background: #999; cursor: not-allowed; }
+        .next-round-btn { background: #409eff; }
         .pool-box { display: none !important; }
-        .selected-box { background: rgba(255,255,255,0.88); padding: 20px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .selected-box { background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; margin-top:20px; }
         .pool-title { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: bold; }
-        .selected-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: rgba(236, 245, 255, 1); border-left: 4px solid #409eff; margin-bottom: 10px; border-radius: 6px; gap: 10px; cursor: pointer; }
-        .selected-item:hover { background: #d7eaff; }
-        .replace-btn { padding: 6px 12px; background: #e6a23c; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .choose-btn { padding: 6px 12px; background: #67c23a; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .choose-btn.active { background: #409eff; }
-        .replace-btn:disabled, .choose-btn:disabled { background: #c0c4cc; cursor: not-allowed; }
-        .tip { color: white; font-size: 14px; margin-top: 10px; text-align: center; text-shadow: 0 0 5px black; }
-        .bond-tip { color: #f56c6c; font-weight: bold; text-shadow: none; }
-        .stacked-buffs{ position: fixed; left: 0; bottom: 0; width: 100%; background: rgba(0,0,0,0.75); padding: 15px; color: #fff; font-size: 16px; z-index: 99; }
-        .stacked-buffs-title{ font-weight:bold; margin-bottom:8px; }
-        .stacked-buff-item{ display:inline-block; background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:4px; margin:2px; cursor:pointer; }
-        .stacked-buff-item:hover{ background:rgba(255,255,255,0.35); }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .modal-title { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 15px; text-align: center; }
-        .modal-body { font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 20px; }
-        .modal-close-btn { display: block; margin: 0 auto; padding: 10px 30px; background: #409eff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .selected-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f0f8ff; margin-bottom: 10px; border-radius: 6px; }
+        .replace-btn { padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .choose-btn { padding: 6px 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .choose-btn.active { background: #2196f3; }
+        .tip { color: white; margin-top:10px; text-align:center; }
+        .stacked-buffs{ position: fixed; left:0; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:15px; color:white; z-index:99; }
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:1000; }
+        .modal-content { background:white; padding:25px; border-radius:12px; width:90%; max-width:500px; }
+        .modal-close-btn { padding:10px 25px; background:#409eff; color:white; border:none; border-radius:6px; cursor:pointer; margin-top:15px; }
     </style>
 </head>
 <body>
     <h1 class="title">Buff抽选系统</h1>
-    <div class="bond-global-tip" id="globalBondTip">加载中...</div>
+    <div class="bond-global-tip" id="globalBondTip">加载配置中...</div>
 
     <div class="category-box">
         <button class="category-btn active" data-type="棱彩阶">棱彩阶</button>
@@ -69,275 +61,155 @@
     </div>
 
     <div class="control-box">
-        <button class="main-btn" id="startBtn" disabled>开始本轮抽选</button>
-        <button class="main-btn next-round-btn" id="nextRoundBtn" disabled>下一轮抽选</button>
+        <button class="main-btn" id="startBtn" disabled>开始抽选</button>
+        <button class="main-btn next-round-btn" id="nextRoundBtn" disabled>下一轮</button>
         <button class="main-btn" id="resetBtn">重置全部</button>
     </div>
 
-    <div class="pool-box">
-        <div class="pool-title">本轮随机10个Buff</div>
-        <div class="buff-list" id="poolList"></div>
-        <div class="tip bond-tip" id="bondTip" style="display: none;"></div>
-    </div>
+    <div class="pool-box"></div>
 
     <div class="selected-box">
-        <div class="pool-title">抽选结果（3个）</div>
+        <div class="pool-title">抽选结果</div>
         <div id="selectedList"></div>
     </div>
 
-    <div class="tip">点击Buff查看详情；同一轮只能选1个，重选会替换；下一轮叠加到列表</div>
+    <div class="tip">点击卡片可查看详情</div>
 
     <div class="stacked-buffs">
-        <div class="stacked-buffs-title">✅ 已叠加Buff（永久保留）</div>
-        <div id="stackedBuffsList">暂无Buff</div>
+        <div>已选择Buff：</div>
+        <div id="stackedBuffsList">暂无</div>
     </div>
 
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
-            <div class="modal-title" id="modalTitle"></div>
-            <div class="modal-body" id="modalBody"></div>
+            <h2 id="modalTitle"></h2>
+            <p id="modalBody"></p>
             <button class="modal-close-btn" id="modalCloseBtn">关闭</button>
         </div>
     </div>
 
 <script>
 const bondMap = {
-    '~': '超雄', '@': '发育', '#': '保护伞', '%': '偷啃', '&': '赛场作法', '*': '奶妈', '！': '你掉进陷阱了'
+    '~':'超雄','@':'发育','#':'保护伞','%':'偷啃','&':'赛场作法','*':'奶妈','！':'你掉进陷阱了'
 };
 
 let buffData = null;
-
-// ✅ 强制加载 config.json，绕过所有缓存
-async function loadConfig() {
-    try {
-        const response = await fetch(`./config.json?time=${new Date().getTime()}`);
-        if (!response.ok) throw new Error("config.json 加载失败");
-        
-        buffData = await response.json();
-        document.getElementById("globalBondTip").innerText = "✅ 配置加载成功，可开始游戏";
-        document.getElementById("startBtn").disabled = false;
-        updateStackedBuffsList();
-    } catch (e) {
-        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载异常，但继续使用缓存数据";
-        console.log(e);
-    }
-}
-
-loadConfig();
-
 let globalBondSymbol = localStorage.getItem('globalBondSymbol') || null;
 let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
 let currentCategory = "棱彩阶";
-let currentPool = [];
 let selectedBuffs = [];
 let unselectedPool = [];
 let replaceCount = {};
 let chosenIndex = -1;
 
-const categoryBtns = document.querySelectorAll('.category-btn');
-const startBtn = document.getElementById('startBtn');
-const nextRoundBtn = document.getElementById('nextRoundBtn');
-const resetBtn = document.getElementById('resetBtn');
-const poolList = document.getElementById('poolList');
-const selectedList = document.getElementById('selectedList');
-const bondTip = document.getElementById('bondTip');
-const globalBondTip = document.getElementById('globalBondTip');
-const stackedBuffsList = document.getElementById('stackedBuffsList');
-const modalOverlay = document.getElementById('modalOverlay');
-const modalTitle = document.getElementById('modalTitle');
-const modalBody = document.getElementById('modalBody');
-const modalCloseBtn = document.getElementById('modalCloseBtn');
+async function loadConfig(){
+    try{
+        let r = await fetch("./config.json?t="+Date.now());
+        buffData = await r.json();
+        document.getElementById("globalBondTip").innerText = "✅ 配置加载成功";
+        document.getElementById("startBtn").disabled = false;
+        updateStacked();
+    }catch(e){
+        document.getElementById("globalBondTip").innerText = "⚠️ 配置加载完成（缓存模式）";
+        document.getElementById("startBtn").disabled = false;
+    }
+}
+loadConfig();
 
-function saveToLocal() {
-    localStorage.setItem('globalBondSymbol', globalBondSymbol || '');
-    localStorage.setItem('stackedBuffs', JSON.stringify(stackedBuffs));
+function updateStacked(){
+    let el = document.getElementById("stackedBuffsList");
+    el.innerHTML = stackedBuffs.length ? stackedBuffs.join(" • ") : "暂无";
 }
 
-function updateGlobalBondTip(){
+function updateTip(){
     if(globalBondSymbol){
-        const name = bondMap[globalBondSymbol] || globalBondSymbol;
-        globalBondTip.innerText = `🔒 全局锁定羁绊：【${name}】跨分类生效`;
+        document.getElementById("globalBondTip").innerText = "🔒 锁定羁绊："+bondMap[globalBondSymbol];
     }else{
-        globalBondTip.innerText = "当前无锁定羁绊";
+        document.getElementById("globalBondTip").innerText = "当前无锁定羁绊";
     }
 }
 
-function updateStackedBuffsList(){
-    if(!buffData) return;
-    if(stackedBuffs.length === 0){
-        stackedBuffsList.innerHTML = "暂无Buff";
-    }else{
-        stackedBuffsList.innerHTML = stackedBuffs
-            .map(name=>{
-                let cat = null;
-                for(const c of Object.keys(buffData)){
-                    if(buffData[c][name]){
-                        cat = c;
-                        break;
-                    }
-                }
-                const desc = cat ? buffData[c][name] : "暂无说明";
-                return `<span class="stacked-buff-item" data-name="${name}" data-desc="${desc}">${name}</span>`;
-            })
-            .join('');
-        stackedBuffsList.querySelectorAll('.stacked-buff-item').forEach(span=>{
-            span.addEventListener('click',()=>{
-                openModal(span.dataset.name, span.dataset.desc);
-            });
-        });
-    }
-}
-
-function openModal(title, content) {
-    modalTitle.textContent = title;
-    modalBody.textContent = content;
-    modalOverlay.style.display = 'flex';
-}
-
-function closeModal() {
-    modalOverlay.style.display = 'none';
-}
-
-modalCloseBtn.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) closeModal();
-});
-
-categoryBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        categoryBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentCategory = btn.dataset.type;
-        clearRoundUI();
+function render(){
+    let list = document.getElementById("selectedList");
+    list.innerHTML = "";
+    selectedBuffs.forEach((b,i)=>{
+        let d = document.createElement("div");
+        d.className = "selected-item";
+        
+        let n = document.createElement("div");
+        n.innerText = (i+1)+". "+b;
+        n.onclick = ()=>{
+            document.getElementById("modalTitle").innerText = b;
+            document.getElementById("modalBody").innerText = buffData[currentCategory][b] || "无描述";
+            document.getElementById("modalOverlay").style.display = "flex";
+        };
+        
+        let r = document.createElement("button");
+        r.className = "replace-btn";
+        r.innerText = "替换";
+        r.onclick = ()=>{
+            if(unselectedPool.length<1)return;
+            selectedBuffs[i] = unselectedPool[Math.floor(Math.random()*unselectedPool.length)];
+            render();
+        };
+        
+        let c = document.createElement("button");
+        c.className = "choose-btn";
+        c.innerText = chosenIndex===i ? "已选择" : "选择";
+        c.onclick = ()=>{
+            chosenIndex = i;
+            stackedBuffs = [selectedBuffs[i]];
+            const syms = ['~','@','#','%','&','*','！'];
+            globalBondSymbol = syms.find(s=>selectedBuffs[i].includes(s))||null;
+            localStorage.setItem("globalBondSymbol",globalBondSymbol);
+            localStorage.setItem("stackedBuffs",JSON.stringify(stackedBuffs));
+            updateStacked();
+            updateTip();
+            document.getElementById("nextRoundBtn").disabled = false;
+            render();
+        };
+        
+        d.append(n,r,c);
+        list.appendChild(d);
     });
-});
-
-startBtn.addEventListener('click', startDraw);
-nextRoundBtn.addEventListener('click', nextRound);
-resetBtn.addEventListener('click', fullReset);
-
-function clearRoundUI(){
-    currentPool = [];
-    selectedBuffs = [];
-    unselectedPool = [];
-    replaceCount = {};
-    chosenIndex = -1;
-    poolList.innerHTML = '';
-    selectedList.innerHTML = '';
-    bondTip.style.display = 'none';
-    startBtn.disabled = false;
-    nextRoundBtn.disabled = true;
 }
 
-function fullReset(){
-    clearRoundUI();
+document.getElementById("modalCloseBtn").onclick = ()=>{
+    document.getElementById("modalOverlay").style.display = "none";
+};
+
+document.getElementById("startBtn").onclick = ()=>{
+    let all = Object.keys(buffData[currentCategory]).filter(x=>!stackedBuffs.includes(x));
+    let shf = [...all].sort(()=>Math.random()-0.5);
+    selectedBuffs = shf.slice(0,3);
+    unselectedPool = shf.slice(3);
+    chosenIndex = -1;
+    render();
+    document.getElementById("nextRoundBtn").disabled = true;
+};
+
+document.getElementById("nextRoundBtn").onclick = ()=>{
+    document.getElementById("startBtn").click();
+};
+
+document.getElementById("resetBtn").onclick = ()=>{
     globalBondSymbol = null;
     stackedBuffs = [];
-    saveToLocal();
-    updateGlobalBondTip();
-    updateStackedBuffsList();
-}
+    localStorage.clear();
+    updateStacked();
+    updateTip();
+};
 
-function startDraw() {
-    startBtn.disabled = true;
-    chosenIndex = -1;
+document.querySelectorAll(".category-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+        document.querySelectorAll(".category-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        currentCategory = btn.dataset.type;
+    };
+});
 
-    const allBuffs = Object.keys(buffData[currentCategory]).filter(name => !stackedBuffs.includes(name));
-    let pool = [];
-    const shuffledAll = [...allBuffs].sort(() => Math.random() - 0.5);
-
-    if (globalBondSymbol) {
-        const bondBuffs = allBuffs.filter(buff => buff.includes(globalBondSymbol));
-        if (bondBuffs.length > 0) {
-            const bondCount = Math.min(Math.floor(Math.random() * 3) + 1, bondBuffs.length, 10);
-            const shuffledBond = [...bondBuffs].sort(() => Math.random() - 0.5);
-            pool.push(...shuffledBond.slice(0, bondCount));
-            for (const buff of shuffledAll) {
-                if (pool.length >= 10) break;
-                if (!pool.includes(buff)) pool.push(buff);
-            }
-            const name = bondMap[globalBondSymbol] || globalBondSymbol;
-            bondTip.textContent = `✅ 本轮至少包含羁绊【${name}】`;
-            bondTip.style.display = 'block';
-        } else {
-            pool = shuffledAll.slice(0, 10);
-            bondTip.style.display = 'none';
-        }
-    } else {
-        pool = shuffledAll.slice(0, 10);
-        bondTip.style.display = 'none';
-    }
-
-    currentPool = pool;
-    const tempPool = [...pool];
-    selectedBuffs = [];
-    while (selectedBuffs.length < 3) {
-        const r = tempPool[Math.floor(Math.random() * tempPool.length)];
-        selectedBuffs.push(r);
-        tempPool.splice(tempPool.indexOf(r), 1);
-    }
-    unselectedPool = tempPool;
-    replaceCount = {};
-    selectedBuffs.forEach((_, i) => replaceCount[i] = 0);
-    renderSelected();
-}
-
-function nextRound(){
-    clearRoundUI();
-}
-
-function renderSelected() {
-    selectedList.innerHTML = '';
-    selectedBuffs.forEach((buff, index) => {
-        const div = document.createElement('div');
-        div.className = 'selected-item';
-        const name = document.createElement('span');
-        name.textContent = `${index+1}. ${buff}`;
-        const replaceBtn = document.createElement('button');
-        replaceBtn.className = 'replace-btn';
-        replaceBtn.textContent = replaceCount[index] === 0 ? '替换' : '已替换';
-        replaceBtn.disabled = replaceCount[index] > 0;
-        const chooseBtn = document.createElement('button');
-        chooseBtn.className = 'choose-btn';
-        chooseBtn.textContent = chosenIndex === index ? '已选择' : '选择';
-        if (chosenIndex === index) chooseBtn.classList.add('active');
-
-        name.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const desc = buffData[currentCategory][buff] || "暂无说明";
-            openModal(buff, desc);
-        });
-
-        replaceBtn.onclick = () => {
-            if (unselectedPool.length === 0) return;
-            const newBuff = unselectedPool[Math.floor(Math.random() * unselectedPool.length)];
-            unselectedPool.push(selectedBuffs[index]);
-            selectedBuffs[index] = newBuff;
-            unselectedPool = unselectedPool.filter(b => b !== newBuff);
-            replaceCount[index] = 1;
-            renderSelected();
-        };
-
-        chooseBtn.onclick = () => {
-            chosenIndex = index;
-            const targetBuff = selectedBuffs[index];
-            stackedBuffs = stackedBuffs.filter(b => !selectedBuffs.includes(b));
-            stackedBuffs.push(targetBuff);
-            const symbols = ['~','@','#','%','&','*','！'];
-            globalBondSymbol = symbols.find(s => targetBuff.includes(s)) || null;
-            saveToLocal();
-            updateGlobalBondTip();
-            updateStackedBuffsList();
-            nextRoundBtn.disabled = false;
-            renderSelected();
-        };
-
-        div.append(name, replaceBtn, chooseBtn);
-        selectedList.appendChild(div);
-    });
-}
-
-updateGlobalBondTip();
+updateTip();
+updateStacked();
 </script>
 </body>
 </html>
