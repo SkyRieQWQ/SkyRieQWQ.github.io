@@ -18,7 +18,6 @@
             min-height: 100vh;
         }
 
-        /* 背景图片样式，路径保留你原来的 ./galatea.jpg */
         body {
             background-image: url("./galatea.jpg");
             background-repeat: no-repeat;
@@ -32,7 +31,6 @@
             position: relative;
             padding-bottom: 180px;
         }
-
         body::before {
             content: '';
             position: fixed;
@@ -108,7 +106,7 @@
         }
 
         .pool-box {
-            display: none;
+            display: block;
         }
 
         .selected-box {
@@ -269,7 +267,7 @@
 </head>
 <body>
     <h1 class="title">Buff抽选系统</h1>
-    <div class="bond-global-tip" id="globalBondTip">当前无锁定羁绊</div>
+    <div class="bond-global-tip" id="globalBondTip">正在自动加载配置...</div>
 
     <div class="category-box">
         <button class="category-btn active" data-type="棱彩阶">棱彩阶</button>
@@ -278,10 +276,9 @@
     </div>
 
     <div class="control-box">
-        <button class="main-btn" id="startBtn">开始本轮抽选</button>
+        <button class="main-btn" id="startBtn" disabled>开始本轮抽选</button>
         <button class="main-btn next-round-btn" id="nextRoundBtn" disabled>下一轮抽选</button>
         <button class="main-btn" id="resetBtn">重置全部</button>
-        <button class="main-btn" id="importConfigBtn">导入配置文件</button>
     </div>
 
     <div class="pool-box">
@@ -323,32 +320,22 @@ const bondMap = {
 };
 
 let buffData = null;
-let isConfigLoaded = false;
 
-// 导入配置文件功能
-document.getElementById('importConfigBtn').addEventListener('click', function () {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = event => {
-      try {
-        buffData = JSON.parse(event.target.result);
-        isConfigLoaded = true;
-        alert('✅ 配置导入成功！现在可以开始抽选了');
-      } catch (err) {
-        alert('❌ 配置文件格式错误：' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-});
+// 自动加载 GitHub 同目录下的 config.json
+async function loadConfig() {
+    try {
+        const res = await fetch('./config.json');
+        if (!res.ok) throw new Error('配置文件不存在');
+        buffData = await res.json();
+        document.getElementById('globalBondTip').innerText = "✅ 配置加载完成，可正常抽选";
+        document.getElementById('startBtn').disabled = false;
+        updateStackedBuffsList();
+    } catch (err) {
+        document.getElementById('globalBondTip').innerText = "❌ 加载配置失败，请检查 config.json 是否上传";
+        console.error(err);
+    }
+}
+loadConfig();
 
 let globalBondSymbol = localStorage.getItem('globalBondSymbol') || null;
 let stackedBuffs = JSON.parse(localStorage.getItem('stackedBuffs')) || [];
@@ -389,6 +376,7 @@ function updateGlobalBondTip(){
 }
 
 function updateStackedBuffsList(){
+    if(!buffData) return;
     if(stackedBuffs.length === 0){
         stackedBuffsList.innerHTML = "暂无Buff";
     }else{
@@ -437,10 +425,9 @@ categoryBtns.forEach(btn => {
     });
 });
 
-// 给开始按钮加导入配置的判断
 startBtn.addEventListener('click', function () {
-  if (!isConfigLoaded || !buffData) {
-    alert('⚠️ 请先点击「导入配置文件」按钮，上传你的 config.json！');
+  if (!buffData) {
+    alert('配置还未加载完成，请稍等');
     return;
   }
   startDraw();
