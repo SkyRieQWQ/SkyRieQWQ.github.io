@@ -622,9 +622,10 @@ function fullReset(){
 function startDraw() {
     startBtn.disabled = true;
     chosenIndex = -1;
-    
-    const allBuffs = Object.keys(buffData[currentCategory]);
+
+    const allBuffs = Object.keys(buffData[currentCategory]).filter(name => !stackedBuffs.includes(name));
     let pool = [];
+    const shuffledAll = [...allBuffs].sort(() => Math.random() - 0.5);
 
     if (globalBondSymbol) {
         const bondBuffs = allBuffs.filter(buff => buff.includes(globalBondSymbol));
@@ -635,26 +636,20 @@ function startDraw() {
             const shuffledBond = [...bondBuffs].sort(() => Math.random() - 0.5);
             pool.push(...shuffledBond.slice(0, bondCount));
 
-            const shuffledNormal = [...normalBuffs].sort(() => Math.random() - 0.5);
-            for (const b of shuffledNormal) {
+            for (const buff of shuffledAll) {
                 if (pool.length >= 10) break;
-                if (!pool.includes(b)) pool.push(b);
+                if (!pool.includes(buff)) pool.push(buff);
             }
 
-            bondTip.textContent = `✅ 本轮至少包含羁绊【${bondMap[globalBondSymbol]}】`;
+            const name = bondMap[globalBondSymbol] || globalBondSymbol;
+            bondTip.textContent = `✅ 本轮至少包含羁绊【${name}】`;
             bondTip.style.display = 'block';
         } else {
-            while (pool.length < 10) {
-                const r = allBuffs[Math.floor(Math.random() * allBuffs.length)];
-                if (!pool.includes(r)) pool.push(r);
-            }
+            pool = shuffledAll.slice(0, 10);
             bondTip.style.display = 'none';
         }
     } else {
-        while (pool.length < 10) {
-            const r = allBuffs[Math.floor(Math.random() * allBuffs.length)];
-            if (!pool.includes(r)) pool.push(r);
-        }
+        pool = shuffledAll.slice(0, 10);
         bondTip.style.display = 'none';
     }
 
@@ -674,7 +669,6 @@ function startDraw() {
     selectedBuffs.forEach((_, i) => replaceCount[i] = 0);
     renderSelected();
 }
-
 function nextRound(){
     clearRoundUI();
 }
