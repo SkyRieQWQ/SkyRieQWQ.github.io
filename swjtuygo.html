@@ -19,13 +19,12 @@
         }
 
         body {
-            /* 兼容所有浏览器的背景写法，拆分成独立属性 */
-            background-image: url("galatea.jpg");
+            background-image: url("https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/9fb7f8ac6f6a415698745c7f88958185.png");
             background-repeat: no-repeat;
-            background-position: center center;
+            background-position: center;
             background-size: cover;
             background-attachment: fixed;
-            background-color: #333;
+            background-color: #222;
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
@@ -37,8 +36,8 @@
             content: '';
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
             z-index: -1;
         }
 
@@ -112,7 +111,7 @@
         }
 
         .selected-box {
-            background: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.88);
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 25px;
@@ -132,7 +131,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 15px;
-            background: rgba(236, 245, 255, 0.95);
+            background: rgba(236, 245, 255, 1);
             border-left: 4px solid #409eff;
             margin-bottom: 10px;
             border-radius: 6px;
@@ -141,7 +140,7 @@
         }
 
         .selected-item:hover {
-            background: rgba(236, 245, 255, 1);
+            background: #d7eaff;
         }
 
         .replace-btn {
@@ -209,6 +208,11 @@
             padding:4px 10px;
             border-radius:4px;
             margin:2px;
+            cursor:pointer; /* 手型提示可点击 */
+        }
+
+        .stacked-buff-item:hover{
+            background:rgba(255,255,255,0.35);
         }
 
         .modal-overlay {
@@ -455,8 +459,25 @@ function updateStackedBuffsList(){
         stackedBuffsList.innerHTML = "暂无Buff";
     }else{
         stackedBuffsList.innerHTML = stackedBuffs
-            .map(name=>`<span class="stacked-buff-item">${name}</span>`)
+            .map(name=>{
+                // 找这个buff属于哪个阶
+                let cat = null;
+                for(const c of Object.keys(buffData)){
+                    if(buffData[c][name]){
+                        cat = c;
+                        break;
+                    }
+                }
+                const desc = cat ? buffData[cat][name] : "暂无说明";
+                return `<span class="stacked-buff-item" data-name="${name}" data-desc="${desc}">${name}</span>`;
+            })
             .join('');
+        // 绑定点击事件
+        stackedBuffsList.querySelectorAll('.stacked-buff-item').forEach(span=>{
+            span.addEventListener('click',()=>{
+                openModal(span.dataset.name, span.dataset.desc);
+            });
+        });
     }
 }
 
